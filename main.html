@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Proyecto de inversiones | Interés Compuesto ARS</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Variables globales para modo claro/oscuro */
+        :root {
+            --bg-body: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a4a4a;
+            --text-muted: #777777;
+            --border-light: #e0e0e0;
+            --border-card: #ededed;
+            --result-bg: #fafafa;
+            --table-header-bg: #f5f5f5;
+            --table-border: #f0f0f0;
+            --badge-bg: #f0f0f0;
+            --badge-text: #2c2c2c;
+            --input-border: #dddddd;
+            --button-bg: #000000;
+            --button-hover: #2c2c2c;
+            --chart-grid: #eaeaea;
+            --tooltip-bg: #ffffff;
+            --tooltip-border: #cccccc;
+            --formula-bg: #f8f8f8;
+            --shadow: 0 8px 20px rgba(0,0,0,0.02), 0 2px 6px rgba(0,0,0,0.05);
+            --select-bg: #ffffff;
+        }
+
+        body.dark {
+            --bg-body: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #f0f0f0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #888888;
+            --border-light: #2c2c2c;
+            --border-card: #2a2a2a;
+            --result-bg: #252525;
+            --table-header-bg: #2a2a2a;
+            --table-border: #2c2c2c;
+            --badge-bg: #2c2c2c;
+            --badge-text: #e0e0e0;
+            --input-border: #3a3a3a;
+            --button-bg: #ffffff;
+            --button-hover: #cccccc;
+            --chart-grid: #333333;
+            --tooltip-bg: #2a2a2a;
+            --tooltip-border: #444444;
+            --formula-bg: #2a2a2a;
+            --shadow: 0 8px 20px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2);
+            --select-bg: #2a2a2a;
+        }
+
+        body {
+            background: var(--bg-body);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            line-height: 1.5;
+            padding: clamp(1rem, 4vw, 2rem) clamp(1rem, 5vw, 2rem);
+            color: var(--text-primary);
+            transition: background 0.3s ease, color 0.2s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: clamp(1.5rem, 5vw, 2.5rem);
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: clamp(1rem, 3vw, 1.5rem);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .logo-svg {
+            width: clamp(38px, 8vw, 48px);
+            height: clamp(38px, 8vw, 48px);
+            background: var(--button-bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
+            transition: background 0.3s ease;
+        }
+
+        .logo-svg svg circle,
+        .logo-svg svg path {
+            stroke: var(--card-bg);
+        }
+
+        .logo-svg svg circle {
+            stroke: var(--card-bg);
+        }
+
+        .logo-svg svg path {
+            fill: var(--card-bg);
+            stroke: var(--card-bg);
+        }
+
+        .logo-text {
+            font-size: clamp(1.3rem, 5vw, 1.6rem);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .logo-sub {
+            font-size: clamp(0.65rem, 2.5vw, 0.75rem);
+            font-weight: 400;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+        }
+
+        .theme-toggle {
+            background: var(--badge-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+            font-weight: 500;
+            color: var(--badge-text);
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        /* grid principal */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: clamp(1rem, 3vw, 2rem);
+            margin-bottom: clamp(1.5rem, 4vw, 2rem);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: var(--shadow);
+            padding: clamp(1.2rem, 4vw, 1.8rem);
+            border: 1px solid var(--border-card);
+            transition: background 0.3s ease, border 0.2s ease;
+        }
+
+        .card h2 {
+            font-size: clamp(1.2rem, 4.5vw, 1.5rem);
+            font-weight: 600;
+            margin-bottom: clamp(1rem, 3vw, 1.5rem);
+            letter-spacing: -0.3px;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: clamp(1rem, 3vw, 1.4rem);
+        }
+
+        label {
+            display: block;
+            font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: clamp(0.7rem, 2.5vw, 0.85rem) clamp(0.8rem, 2.5vw, 1rem);
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            border: 1px solid var(--input-border);
+            border-radius: 20px;
+            background: var(--card-bg);
+            transition: 0.2s;
+            font-weight: 450;
+            color: var(--text-primary);
+        }
+
+        select {
+            cursor: pointer;
+            background-color: var(--select-bg);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--button-bg);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 0.8rem;
+            align-items: flex-end;
+        }
+
+        .input-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .period-select {
+            flex: 0.8;
+            min-width: 100px;
+        }
+
+        .input-hint {
+            font-size: clamp(0.65rem, 2vw, 0.7rem);
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        button {
+            background: var(--button-bg);
+            color: var(--card-bg);
+            border: none;
+            padding: clamp(0.75rem, 2.5vw, 0.9rem) 1.5rem;
+            font-size: clamp(0.85rem, 3vw, 0.95rem);
+            font-weight: 500;
+            border-radius: 40px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+            letter-spacing: 0.2px;
+        }
+
+        button:hover {
+            background: var(--button-hover);
+            transform: scale(0.98);
+        }
+
+        .result-box {
+            background: var(--result-bg);
+            border-radius: 24px;
+            padding: clamp(1rem, 3vw, 1.2rem);
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-card);
+            transition: background 0.3s ease;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+
+        .result-label {
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .result-value {
+            font-size: clamp(1.2rem, 5vw, 1.5rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+            word-break: break-word;
+            text-align: right;
+        }
+
+        .small-value {
+            font-size: clamp(0.9rem, 3.5vw, 1rem);
+            font-weight: 500;
+        }
+
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: clamp(1.2rem, 4vw, 1.8rem);
+            border: 1px solid var(--border-card);
+            margin-bottom: clamp(1.5rem, 4vw, 2rem);
+            transition: background 0.3s ease;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: clamp(1rem, 3vw, 1.5rem);
+        }
+
+        .chart-header h3 {
+            font-size: clamp(1.1rem, 4vw, 1.3rem);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            color: var(--text-primary);
+        }
+
+        .chart-caption {
+            font-size: clamp(0.65rem, 2.5vw, 0.75rem);
+            color: var(--text-muted);
+        }
+
+        .chart-container {
+            width: 100%;
+            min-height: 280px;
+            max-height: 450px;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            max-height: 400px;
+            width: 100%;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 1.8rem;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+            min-width: 500px;
+        }
+
+        th {
+            text-align: left;
+            padding: clamp(0.6rem, 2vw, 0.75rem) clamp(0.4rem, 1.5vw, 0.5rem);
+            background: var(--table-header-bg);
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        td {
+            padding: clamp(0.6rem, 2vw, 0.7rem) clamp(0.4rem, 1.5vw, 0.5rem);
+            border-bottom: 1px solid var(--table-border);
+            color: var(--text-primary);
+        }
+
+        .mono {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-weight: 500;
+            font-size: clamp(0.7rem, 2.2vw, 0.8rem);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: clamp(1.5rem, 5vw, 2rem);
+            font-size: clamp(0.65rem, 2vw, 0.75rem);
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-light);
+            padding-top: clamp(1rem, 3vw, 1.8rem);
+        }
+
+        @media (max-width: 640px) {
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.3rem;
+            }
+            .result-value {
+                text-align: left;
+            }
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .input-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            .period-select {
+                width: 100%;
+            }
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <div class="logo-svg">
+                <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="14" stroke="white" stroke-width="1.5" fill="none"/>
+                    <path d="M10 22 L16 10 L22 22 L16 18 L10 22Z" fill="white" stroke="white" stroke-width="0.8" stroke-linejoin="round"/>
+                    <circle cx="16" cy="14" r="1.2" fill="white" stroke="none"/>
+                </svg>
+            </div>
+            <div>
+                <div class="logo-text">Proyecto de inversiones</div>
+                <div class="logo-sub">interés compuesto · ARS · meses/años</div>
+            </div>
+        </div>
+        <button class="theme-toggle" id="themeToggle">
+            <span class="theme-icon" id="themeIcon">🌙</span>
+            <span id="themeText">Modo oscuro</span>
+        </button>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>📐 parámetros de inversión</h2>
+            <div class="form-group">
+                <label>💰 capital inicial (ARS)</label>
+                <input type="number" id="initialAmount" value="100000" step="10000" placeholder="Ej: 100000">
+                <div class="input-hint">monto que inviertes al inicio en pesos argentinos</div>
+            </div>
+            <div class="form-group">
+                <label>➕ aportación periódica (ARS)</label>
+                <input type="number" id="monthlyContribution" value="20000" step="5000" placeholder="Ej: 20000">
+                <div class="input-hint">cantidad que añades cada mes</div>
+            </div>
+            <div class="form-group">
+                <label>📈 tasa anual (%)</label>
+                <input type="number" id="annualRate" value="70" step="5" placeholder="Ej: 70">
+                <div class="input-hint">interés anual en porcentaje (ej: 70% anual)</div>
+            </div>
+            <div class="form-group">
+                <label>⏱️ período de inversión</label>
+                <div class="input-row">
+                    <div class="form-group" style="flex: 2;">
+                        <input type="number" id="periodValue" value="3" step="1" placeholder="Cantidad">
+                    </div>
+                    <div class="form-group period-select">
+                        <select id="periodUnit">
+                            <option value="months">Meses</option>
+                            <option value="years" selected>Años</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-hint">elige entre meses o años para tu horizonte de inversión</div>
+            </div>
+            <button id="simulateBtn">calcular crecimiento →</button>
+
+            <div class="result-box" id="resultPanel">
+                <div class="result-item">
+                    <span class="result-label">valor futuro total</span>
+                    <span class="result-value" id="futureValue">—</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">total aportado</span>
+                    <span class="result-value small-value" id="totalContributions">—</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">intereses generados</span>
+                    <span class="result-value small-value" id="totalInterest">—</span>
+                </div>
+            </div>
+        </div>
+<!-- 
+        <div class="card">
+            <h2>📊 fórmula de cálculo</h2>
+            <div style="background: var(--formula-bg); border-radius: 20px; padding: clamp(0.8rem, 3vw, 1rem); border-left: 3px solid var(--button-bg); transition: background 0.3s ease;">
+                <div style="font-weight: 600; margin-bottom: 6px; font-size: clamp(0.8rem, 2.8vw, 0.9rem); color: var(--text-primary);">✨ interés compuesto mensual (ARS)</div>
+                <div style="font-family: monospace; font-size: clamp(0.7rem, 2.5vw, 0.8rem); word-break: break-word; color: var(--text-primary);">VF = Capital · (1 + i)^n + A · [((1+i)^n - 1)/i]</div>
+                <div class="input-hint" style="margin-top: 8px;">Aportes al inicio de cada mes · Reinversión total de intereses · Moneda: ARS ($)</div>
+            </div>
+        </div> -->
+    </div>
+
+    <div class="chart-section">
+        <div class="chart-header">
+            <h3>📈 evolución del interés por período</h3>
+            <div class="chart-caption">Cada punto representa el interés ganado en ese período (ARS) | Tendencia de crecimiento</div>
+        </div>
+        <div class="chart-container">
+            <canvas id="yearlyInterestChart" width="800" height="350" style="display: block; width: 100%; height: auto; border-radius: 20px;"></canvas>
+        </div>
+        <div class="input-hint" style="text-align:center; margin-top: 0.5rem;">Visualización adaptable · Modo claro/oscuro · Períodos: meses o años</div>
+    </div>
+
+    <div class="chart-section" style="margin-top: 0;">
+        <h3 style="margin-bottom: clamp(0.8rem, 3vw, 1rem); font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-primary);">📋 evolución detallada por período</h3>
+        <div class="table-wrapper">
+            <table id="evolutionTable">
+                <thead>
+                    <tr>
+                        <th>Período</th>
+                        <th>Saldo final</th>
+                        <th>Interés ganado en el período</th>
+                        <th>Aportes acumulados</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="4" style="text-align:center;">Ingresa valores y presiona "calcular"</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="input-hint" style="margin-top: 14px;">* Simulación mes a mes con aportes al inicio del período. Interés compuesto mensual. Los períodos se muestran según la unidad seleccionada (mes o año).</div>
+    </div>
+
+    <footer>
+        Proyecto de inversiones · interés compuesto en ARS ($) · Elige entre meses o años · Modo claro/oscuro
+    </footer>
+</div>
+
+<script>
+    let chartInstance = null;
+
+    // Formateador en ARS
+    const arsFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    function getTotalPeriods() {
+        let value = parseFloat(document.getElementById('periodValue').value);
+        const unit = document.getElementById('periodUnit').value;
+        if (isNaN(value)) value = 0;
+        if (value < 0) value = 0;
+        if (unit === 'years') {
+            return { totalMonths: Math.floor(value * 12), displayUnit: 'years', rawValue: value };
+        } else {
+            return { totalMonths: Math.floor(value), displayUnit: 'months', rawValue: value };
+        }
+    }
+
+    function calcularInteresCompuesto(initial, monthlyAdd, annualRatePercent, totalMonths) {
+        initial = Number(initial);
+        monthlyAdd = Number(monthlyAdd);
+        annualRatePercent = Number(annualRatePercent);
+        
+        if (isNaN(initial)) initial = 0;
+        if (isNaN(monthlyAdd)) monthlyAdd = 0;
+        if (isNaN(annualRatePercent)) annualRatePercent = 0;
+        if (initial < 0) initial = 0;
+        if (monthlyAdd < 0) monthlyAdd = 0;
+        if (totalMonths < 0) totalMonths = 0;
+        if (initial > 1e10) initial = 1e10;
+        if (monthlyAdd > 1e9) monthlyAdd = 1e9;
+        if (totalMonths > 1200) totalMonths = 1200; // máximo 100 años
+
+        const monthlyRate = annualRatePercent / 100 / 12;
+        
+        let balance = initial;
+        let totalContributions = initial;
+        const periodData = []; // datos por período (mes o año)
+        let cumulativeContributions = initial;
+        
+        if (totalMonths === 0) {
+            periodData.push({
+                periodNumber: 0,
+                endBalance: initial,
+                interestEarned: 0,
+                totalContributionsUpToPeriod: initial
+            });
+            return {
+                futureValue: initial,
+                totalContributions: initial,
+                totalInterest: 0,
+                periodBreakdown: periodData
+            };
+        }
+        
+        // Simulación mes a mes
+        for (let month = 1; month <= totalMonths; month++) {
+            if (monthlyAdd > 0) {
+                balance += monthlyAdd;
+                cumulativeContributions += monthlyAdd;
+                totalContributions += monthlyAdd;
+            }
+            if (monthlyRate > 0) {
+                balance = balance * (1 + monthlyRate);
+            }
+            
+            // Verificar fin de período (cada 12 meses si es años, o cada mes si es meses)
+            const unit = document.getElementById('periodUnit').value;
+            const isEndOfPeriod = (unit === 'years') ? (month % 12 === 0) : true;
+            
+            if (isEndOfPeriod || month === totalMonths) {
+                let periodNumber;
+                let interestEarnedThisPeriod = 0;
+                let totalContributionsThisPeriod;
+                
+                if (unit === 'years') {
+                    periodNumber = Math.ceil(month / 12);
+                    totalContributionsThisPeriod = monthlyAdd * 12;
+                } else {
+                    periodNumber = month;
+                    totalContributionsThisPeriod = monthlyAdd;
+                }
+                
+                if (periodData.length === 0) {
+                    // primer período
+                    const initialPeriodCapital = (unit === 'years') ? initial : (periodNumber === 1 ? initial : 0);
+                    const totalAdded = totalContributionsThisPeriod;
+                    interestEarnedThisPeriod = balance - (initialPeriodCapital + totalAdded);
+                } else {
+                    const prevPeriod = periodData[periodData.length - 1];
+                    const previousEndBalance = prevPeriod.endBalance;
+                    interestEarnedThisPeriod = balance - (previousEndBalance + totalContributionsThisPeriod);
+                }
+                
+                if (interestEarnedThisPeriod < 0 && interestEarnedThisPeriod > -0.01) interestEarnedThisPeriod = 0;
+                if (interestEarnedThisPeriod < 0) interestEarnedThisPeriod = 0;
+                
+                periodData.push({
+                    periodNumber: periodNumber,
+                    endBalance: balance,
+                    interestEarned: interestEarnedThisPeriod,
+                    totalContributionsUpToPeriod: cumulativeContributions
+                });
+            }
+        }
+        
+        const finalBalance = periodData.length > 0 ? periodData[periodData.length-1].endBalance : balance;
+        const totalInterestGenerated = finalBalance - totalContributions;
+        
+        return {
+            futureValue: finalBalance,
+            totalContributions: totalContributions,
+            totalInterest: totalInterestGenerated,
+            periodBreakdown: periodData
+        };
+    }
+    
+    function getChartColors() {
+        const isDark = document.body.classList.contains('dark');
+        return {
+            lineColor: isDark ? '#ffffff' : '#000000',
+            pointColor: isDark ? '#ffffff' : '#000000',
+            pointBorder: isDark ? '#1e1e1e' : '#ffffff',
+            gridColor: isDark ? '#333333' : '#eaeaea',
+            textColor: isDark ? '#f0f0f0' : '#1a1a1a',
+            tooltipBg: isDark ? '#2a2a2a' : '#ffffff',
+            tooltipBorder: isDark ? '#444444' : '#cccccc'
+        };
+    }
+
+    function actualizarSimulacion() {
+        let initial = parseFloat(document.getElementById('initialAmount').value);
+        let monthly = parseFloat(document.getElementById('monthlyContribution').value);
+        let rate = parseFloat(document.getElementById('annualRate').value);
+        
+        if (isNaN(initial)) initial = 0;
+        if (isNaN(monthly)) monthly = 0;
+        if (isNaN(rate)) rate = 0;
+        
+        const periodInfo = getTotalPeriods();
+        const totalMonths = periodInfo.totalMonths;
+        const unit = periodInfo.displayUnit;
+        
+        const resultado = calcularInteresCompuesto(initial, monthly, rate, totalMonths);
+        
+        document.getElementById('futureValue').innerText = arsFormatter.format(resultado.futureValue);
+        document.getElementById('totalContributions').innerText = arsFormatter.format(resultado.totalContributions);
+        document.getElementById('totalInterest').innerText = arsFormatter.format(resultado.totalInterest);
+        
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        
+        const periods = resultado.periodBreakdown;
+        if (periods.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="4" style="text-align:center;">Sin datos</td>';
+            tbody.appendChild(row);
+        } else {
+            for (let item of periods) {
+                const row = document.createElement('tr');
+                const periodCell = document.createElement('td');
+                periodCell.textContent = unit === 'years' ? `Año ${item.periodNumber}` : `Mes ${item.periodNumber}`;
+                const balanceCell = document.createElement('td');
+                balanceCell.className = 'mono';
+                balanceCell.textContent = arsFormatter.format(item.endBalance);
+                const interestCell = document.createElement('td');
+                interestCell.className = 'mono';
+                interestCell.textContent = arsFormatter.format(item.interestEarned);
+                const aportesCell = document.createElement('td');
+                aportesCell.className = 'mono';
+                aportesCell.textContent = arsFormatter.format(item.totalContributionsUpToPeriod);
+                row.appendChild(periodCell);
+                row.appendChild(balanceCell);
+                row.appendChild(interestCell);
+                row.appendChild(aportesCell);
+                tbody.appendChild(row);
+            }
+        }
+        
+        const periodLabels = periods.map(item => unit === 'years' ? `Año ${item.periodNumber}` : `Mes ${item.periodNumber}`);
+        const interestValues = periods.map(item => item.interestEarned);
+        const colors = getChartColors();
+        
+        const ctx = document.getElementById('yearlyInterestChart').getContext('2d');
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: periodLabels,
+                datasets: [{
+                    label: `Interés ganado en cada ${unit === 'years' ? 'año' : 'mes'} (ARS)`,
+                    data: interestValues,
+                    borderColor: colors.lineColor,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: colors.pointColor,
+                    pointBorderColor: colors.pointBorder,
+                    pointBorderWidth: 1.2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.2,
+                    fill: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: colors.textColor,
+                            font: { weight: '500', size: 11 },
+                            boxWidth: 12,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        },
+                        position: 'top',
+                    },
+                    tooltip: {
+                        backgroundColor: colors.tooltipBg,
+                        titleColor: colors.textColor,
+                        bodyColor: colors.textColor,
+                        borderColor: colors.tooltipBorder,
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                let value = context.raw;
+                                return `Interés: ${arsFormatter.format(value)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: colors.gridColor, lineWidth: 0.5 },
+                        title: {
+                            display: true,
+                            text: `Ganancia por ${unit === 'years' ? 'año' : 'mes'} (ARS)`,
+                            color: colors.textColor,
+                            font: { size: 10, weight: 'normal' }
+                        },
+                        ticks: {
+                            color: colors.textColor,
+                            callback: function(value) {
+                                return arsFormatter.format(value);
+                            },
+                            maxTicksLimit: 6
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: colors.textColor, 
+                            maxRotation: 45, 
+                            minRotation: 35, 
+                            font: { size: 9 },
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        },
+                        title: {
+                            display: true,
+                            text: unit === 'years' ? 'Período (años)' : 'Período (meses)',
+                            color: colors.textColor,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                layout: {
+                    padding: { top: 12, bottom: 8, left: 8, right: 12 }
+                }
+            }
+        });
+    }
+    
+    function toggleTheme() {
+        const body = document.body;
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        
+        if (body.classList.contains('dark')) {
+            body.classList.remove('dark');
+            themeIcon.textContent = '🌙';
+            themeText.textContent = 'Modo oscuro';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.classList.add('dark');
+            themeIcon.textContent = '☀️';
+            themeText.textContent = 'Modo claro';
+            localStorage.setItem('theme', 'dark');
+        }
+        actualizarSimulacion();
+    }
+    
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '☀️';
+        document.getElementById('themeText').textContent = 'Modo claro';
+    }
+    
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+    
+    let debounceTimer;
+    function debouncedUpdate() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            actualizarSimulacion();
+        }, 100);
+    }
+    
+    const simularBtn = document.getElementById('simulateBtn');
+    simularBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        actualizarSimulacion();
+    });
+    
+    const inputs = ['initialAmount', 'monthlyContribution', 'annualRate', 'periodValue'];
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', debouncedUpdate);
+            el.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    actualizarSimulacion();
+                }
+            });
+            el.addEventListener('blur', () => actualizarSimulacion());
+        }
+    });
+    
+    document.getElementById('periodUnit').addEventListener('change', () => actualizarSimulacion());
+    
+    window.addEventListener('resize', () => {
+        if (chartInstance) {
+            chartInstance.resize();
+            chartInstance.update();
+        }
+    });
+    
+    actualizarSimulacion();
+</script>
+</body>
+</html>
